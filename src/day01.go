@@ -6,6 +6,7 @@ import (
     "fmt"
     "log"
     "os"
+    "sort"
     "strconv"
 )
 
@@ -54,13 +55,18 @@ func parse_input(filename string) ([][]int) {
     return elves
 }
 
+func int_slice_sum(s []int) (int) {
+    var sum int;
+    for _, v := range s {
+        sum += v
+    }
+    return sum
+}
+
 func calorie_sums(elves [][]int) ([]int) {
     var sums []int
     for _, elf := range elves {
-        sum := 0
-        for _, calories := range elf {
-            sum += calories
-        }
+        sum := int_slice_sum(elf)
         sums = append(sums, sum)
     }
     return sums
@@ -76,18 +82,26 @@ func max_calories(calories []int) (int) {
     return max
 }
 
+func top3_calories(calories []int) ([]int) {
+    top3 := calories
+    sort.Ints(top3)
+    return top3[len(top3)-3:]
+}
+
 func main() {
     var args = parse_args()
 
     elves := parse_input(args.input)
+    calories := calorie_sums(elves)
 
     switch args.part {
     case 1:
-        calories := calorie_sums(elves)
         max := max_calories(calories)
         fmt.Println(max)
     case 2:
-        ;
+        top3 := top3_calories(calories)
+        top3_sum := int_slice_sum(top3)
+        fmt.Println(top3_sum)
     default:
         fmt.Fprintf(os.Stderr, "part %d not implemented\n", args.part)
         os.Exit(1)
