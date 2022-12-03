@@ -36,7 +36,7 @@ var decoding = map[string]string{
     "Z": "scissors",
 }
 
-var win_score = map[string]int{
+var move_score = map[string]int{
     "rock": 1,
     "paper": 2,
     "scissors": 3,
@@ -47,45 +47,76 @@ type Match struct {
     other string
 }
 
-func (m Match) result() int {
-    if m.me == m.other {
-        switch m.me {
+func (m Match) rigged_result() int {
+    score := 0
+    switch m.me {
+    case "rock": // X: lose
+        score += 0
+    case "paper": // Y: draw
+        score += 3
+    case "scissors": // Z: win
+        score += 6
+    default:
+        // unreachable
+        log.Println("error: you can't be here")
+        os.Exit(1)
+    }
+
+    switch m.me {
+    case "rock":
+        // lose
+        switch m.other {
         case "rock":
-            return 3 + 1
+            score += move_score["scissors"]
         case "paper":
-            return 3 + 2
+            score += move_score["rock"]
         case "scissors":
-            return 3 + 3
-        default:
-            return 0
+            score += move_score["paper"]
         }
+    case "paper":
+        // draw
+        score += move_score[m.other]
+    case "scissors":
+        // win
+        switch m.other {
+        case "rock":
+            score += move_score["paper"]
+        case "paper":
+            score += move_score["scissors"]
+        case "scissors":
+            score += move_score["rock"]
+        }
+    default:
+        // unreachable
+        log.Println("error: %s doesn't exist in this game", m.other)
+        os.Exit(1)
     }
 
-    if m.me == "rock" {
-        if m.other == "scissors" {
-            return 6 + 1
-        } else {
-            return 1
-        }
+    return score
+}
+
+func (m Match) result() int {
+    score := move_score[m.me]
+    if m.me == m.other {
+        // draw
+        score += 3
     }
 
-    if m.me == "paper" {
-        if m.other == "rock" {
-            return 6 + 2
-        } else {
-            return 2
-        }
+    // win
+    if m.me == "rock" && m.other == "scissors" {
+        return score + 6
     }
 
-    if m.me == "scissors" {
-        if m.other == "paper" {
-            return 6 + 3
-        } else {
-            return 3
-        }
+    if m.me == "paper" && m.other == "rock" {
+        return score + 6
     }
 
-    return 0
+    if m.me == "scissors" && m.other == "paper" {
+        return score + 6
+    }
+
+    // lose
+    return score
 }
 
 func parse_input(filename string) []Match {
@@ -124,7 +155,11 @@ func main() {
         fmt.Println(score)
     }
     case 2: {
-        ;
+        score := 0
+        for _, move := range moves {
+            score += move.rigged_result()
+        }
+        fmt.Println(score)
     }
     default: {
         log.Println("not implemented for part %d", part)
