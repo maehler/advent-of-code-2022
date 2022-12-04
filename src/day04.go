@@ -33,8 +33,10 @@ type Range struct {
 }
 
 func (r Range) overlaps(other Range) bool {
-    return other.start >= r.start && other.start <= r.end ||
-        other.end >= r.start && other.end <= r.end
+    return (other.start >= r.start && other.start <= r.end) ||
+        (other.end >= r.start && other.end <= r.end) ||
+        r.contains(other) ||
+        other.contains(r)
 }
 
 func (r Range) contains(other Range) bool {
@@ -104,7 +106,13 @@ func main() {
         }
         fmt.Println(sum)
     case 2:
-        ;
+        sum := 0
+        for _, pair := range ranges {
+            if pair[0].overlaps(pair[1]) {
+                sum++
+            }
+        }
+        fmt.Println(sum)
     default:
         log.Printf("error: no such part: %d", args.part)
         os.Exit(1)
