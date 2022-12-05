@@ -45,6 +45,16 @@ func (s *Stack) pop() Crate {
     return r
 }
 
+func (s *Stack) pop_slice(n int) []Crate {
+    c := s.crates[len(s.crates) - n:]
+    if len(s.crates) == n {
+        s.crates = nil
+    } else {
+        s.crates = s.crates[:len(s.crates) - n]
+    }
+    return c
+}
+
 func (s *Stack) insert(c Crate) {
     if len(s.crates) == 0 {
         s.crates = append(s.crates, c)
@@ -56,6 +66,10 @@ func (s *Stack) insert(c Crate) {
 
 func (s *Stack) push(c Crate) {
     s.crates = append(s.crates, c)
+}
+
+func (s *Stack) push_slice(c []Crate) {
+    s.crates = append(s.crates, c...)
 }
 
 func (s Stack) peek() *Crate {
@@ -72,6 +86,12 @@ func do_move(stacks []Stack, move Move) []Stack {
     for i := 0; i < move.n; i++ {
         stacks[move.to].push(stacks[move.from].pop())
     }
+    return stacks
+}
+
+func do_multi_move(stacks []Stack, move Move) []Stack {
+    c := stacks[move.from].pop_slice(move.n)
+    stacks[move.to].push_slice(c)
     return stacks
 }
 
@@ -141,14 +161,17 @@ func main() {
         for _, m := range moves {
             stacks = do_move(stacks, m)
         }
-        for _, s := range stacks {
-            fmt.Printf("%c", *s.peek())
-        }
-        fmt.Println()
     case 2:
-        ;
+        for _, m := range moves {
+            stacks = do_multi_move(stacks, m)
+        }
     default:
         log.Printf("error: not implemented for part %d\n", args.part)
         os.Exit(1)
     }
+
+    for _, s := range stacks {
+        fmt.Printf("%c", *s.peek())
+    }
+    fmt.Println()
 }
