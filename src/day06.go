@@ -59,7 +59,7 @@ func (q Queue) all_unique() bool {
     return true
 }
 
-func parse_input(filename string) int {
+func parse_input(filename string, length int) int {
     file, err := os.Open(filename)
     if err != nil {
         log.Println("error: %s", err)
@@ -68,7 +68,7 @@ func parse_input(filename string) int {
     defer file.Close()
     reader := bufio.NewReader(file)
 
-    buf := NewQueue(4)
+    buf := NewQueue(length)
     n := 1
     for {
         r, _, err := reader.ReadRune()
@@ -81,7 +81,7 @@ func parse_input(filename string) int {
         }
 
         buf.push(r)
-        if n >= 4 && buf.all_unique() {
+        if n >= length && buf.all_unique() {
             return n
         }
         n++
@@ -93,13 +93,12 @@ func main() {
     args := Args{}
     args.parse()
 
-    result := parse_input(args.input)
 
     switch args.part {
     case 1:
-        fmt.Println(result)
+        fmt.Println(parse_input(args.input, 4))
     case 2:
-        ;
+        fmt.Println(parse_input(args.input, 14))
     default:
         log.Printf("error: part %d not implemented", args.part)
         os.Exit(1)
