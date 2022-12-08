@@ -7,6 +7,7 @@ import (
     "io"
     "log"
     "os"
+    "sort"
     "strings"
     "strconv"
 )
@@ -263,7 +264,16 @@ func main() {
         }
         fmt.Println(sum)
     case 2:
-        ;
+        total_size := 70_000_000
+        free_space := total_size - tree.root.getsize()
+        sizes := tree.root.dirsizes()
+        sort.Ints(sizes)
+        for _, s := range sizes {
+            if s + free_space >= 30_000_000 {
+                fmt.Println(s)
+                break
+            }
+        }
     default:
         log.Printf("error: no implementation for part %d", args.part)
         os.Exit(1)
