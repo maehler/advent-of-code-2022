@@ -45,6 +45,21 @@ func parse_input(filename string) []Operation {
     return operations
 }
 
+func get_pixel(cycle, x int) string {
+    x_pos := cycle % 40
+
+    s := ""
+    if x_pos == 0 {
+        s = "\n"
+    }
+
+    if x_pos >= x - 1 && x_pos <= x + 1 {
+        return fmt.Sprintf("%s#", s)
+    } else {
+        return fmt.Sprintf("%s.", s)
+    }
+}
+
 func main() {
     var part int
     var input string
@@ -98,7 +113,24 @@ func main() {
         }
         fmt.Println(sum)
     case 2:
-        ;
+        x := 1
+        cycle := 0
+        var crt string
+        for _, op := range operations {
+            if op.name == "noop" {
+                crt = fmt.Sprintf("%s%s", crt, get_pixel(cycle, x))
+                cycle++
+            }
+
+            if op.name == "addx" {
+                for i := 0; i < 2; i++ {
+                    crt = fmt.Sprintf("%s%s", crt, get_pixel(cycle, x))
+                    cycle++
+                }
+                x += *op.value
+            }
+        }
+        fmt.Println(crt)
     default:
         log.Printf("error: part %d not implemented", part)
         os.Exit(1)
