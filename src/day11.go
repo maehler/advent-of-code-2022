@@ -21,12 +21,15 @@ func (ka *KeepAway) AddMonkey(m Monkey) *Monkey {
     return &ka.monkeys[len(ka.monkeys) - 1]
 }
 
-func (ka *KeepAway) PlayRound() {
-    for mi, m := range ka.monkeys {
-        for ii := range m.items {
+func (ka *KeepAway) PlayRound(less_worry bool, lcm int) {
+    for mi := range ka.monkeys {
+        for ii := range ka.monkeys[mi].items {
             ka.monkeys[mi].ModifyWorry(ii)
-            ka.monkeys[mi].DecreaseWorry(ii)
-            to_monkey := m.Test(ii)
+            if less_worry {
+                ka.monkeys[mi].DecreaseWorry(ii)
+            }
+            ka.monkeys[mi].items[ii] = ka.monkeys[mi].items[ii] % lcm
+            to_monkey := ka.monkeys[mi].Test(ii)
             ka.monkeys[to_monkey].Add(ka.monkeys[mi].items[ii])
         }
         ka.monkeys[mi].ClearItems()
@@ -173,11 +176,15 @@ func main() {
     input = flag.Arg(0)
 
     keepaway := parse_input(input)
+    lcm := 1
+    for _, m := range keepaway.monkeys {
+        lcm *= m.testval
+    }
 
     switch part {
     case 1:
         for i := 0; i < 20; i++ {
-            keepaway.PlayRound()
+            keepaway.PlayRound(true, lcm)
         }
         n_items := make([]int, len(keepaway.monkeys))
         for mi, m := range keepaway.monkeys {
@@ -186,7 +193,15 @@ func main() {
         sort.Slice(n_items, func(i, j int) bool { return n_items[j] < n_items[i] })
         fmt.Println(n_items[0] * n_items[1])
     case 2:
-        ;
+        for i := 0; i < 10_000; i++ {
+            keepaway.PlayRound(false, lcm)
+        }
+        n_items := make([]int, len(keepaway.monkeys))
+        for mi, m := range keepaway.monkeys {
+            n_items[mi] = m.items_viewed
+        }
+        sort.Slice(n_items, func(i, j int) bool { return n_items[j] < n_items[i] })
+        fmt.Println(n_items[0] * n_items[1])
     default:
         log.Printf("error: part %d not implemented\n", part)
         os.Exit(1)
