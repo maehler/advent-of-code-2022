@@ -7,6 +7,7 @@ import (
     "io"
     "log"
     "os"
+    "sort"
 )
 
 type Pos [2]int
@@ -222,7 +223,20 @@ func main() {
             fmt.Println("No path found...")
         }
     case 2:
-        ;
+        pathlens := []int{}
+        for i, row := range mat {
+            for j := range row {
+                if mat[i][j] == 0 {
+                    end_node := bfs(mat, [2]int{j, i}, end)
+                    if end_node != nil {
+                        pathlen, _ := end_node.Len()
+                        pathlens = append(pathlens, pathlen)
+                    }
+                }
+            }
+        }
+        sort.Ints(pathlens)
+        fmt.Println(pathlens[0])
     case 3:
         log.Printf("error: part %d not implemented\n", part)
         os.Exit(1)
