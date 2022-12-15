@@ -6,6 +6,7 @@ import (
     "fmt"
     "log"
     "os"
+    "sort"
     "strings"
 )
 
@@ -63,7 +64,17 @@ func compare(a, b any) int {
     return len(alist) - len(blist)
 }
 
+func sort_packets(packets []any) []any {
+    less_func := func(i, j int) bool {
+        return compare(packets[i], packets[j]) <= 0
+    }
+    sort.Slice(packets, less_func)
+    return packets
+}
+
 func main() {
+    var part int
+    flag.IntVar(&part, "part", 1, "part to run")
     flag.Parse()
     if flag.NArg() != 1 {
         fmt.Println("usage: day13 input-file")
@@ -75,20 +86,41 @@ func main() {
     packets := parse_input(filename)
 
     sorted_indices := []int{}
-    sum := 0
-    pair := 0
-    for i := 0; i < len(packets); i += 2 {
-        pair++
 
-        p1 := packets[i]
-        p2 := packets[i + 1]
+    switch part {
+    case 1:
+        sum := 0
+        pair := 0
+        for i := 0; i < len(packets); i += 2 {
+            pair++
 
-        sorted := compare(p1, p2) <= 0
-        if sorted {
-            sorted_indices = append(sorted_indices, pair)
-            sum += pair
+            p1 := packets[i]
+            p2 := packets[i + 1]
+
+            sorted := compare(p1, p2) <= 0
+            if sorted {
+                sorted_indices = append(sorted_indices, pair)
+                sum += pair
+            }
         }
-    }
 
-    fmt.Println(sum)
+        fmt.Println(sum)
+    case 2:
+        d1 := []any{[]any{6.}}
+        d2 := []any{[]any{2.}}
+        packets = append(packets, d1, d2)
+        sort_packets(packets)
+
+        res := 1
+        for i, packet := range packets {
+            if fmt.Sprintf("%v", packet) == "[[2]]" ||
+                    fmt.Sprintf("%v", packet) == "[[6]]" {
+                res *= i + 1
+            }
+        }
+        fmt.Println(res)
+    default:
+        log.Printf("error: part %d not implemented", part)
+        os.Exit(1)
+    }
 }
