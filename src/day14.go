@@ -3,6 +3,7 @@ package main
 import (
     "flag"
     "fmt"
+    "log"
     "os"
     "strings"
     "strconv"
@@ -40,6 +41,7 @@ func (l Line) MaxY() int {
 type Cave struct {
     board [][]rune
     start Pos
+    floor bool
     n_grains int
 }
 
@@ -57,7 +59,7 @@ func Max(a, b int) int {
     return b
 }
 
-func NewCave(lines []Line) Cave {
+func NewCave(lines []Line, floor bool) Cave {
     max_x, max_y := 0, 0
     for _, l := range lines {
         lx, ly := l.MaxX(), l.MaxY()
@@ -69,14 +71,20 @@ func NewCave(lines []Line) Cave {
         }
     }
 
+    if floor {
+        max_y += 2
+    } else {
+        max_y++
+    }
     max_x += 2
-    max_y++
 
     board := make([][]rune, max_y + 1)
     for y := 0; y <= max_y; y++ {
         board[y] = make([]rune, max_x + 1)
         for x := 0; x <= max_x; x++ {
-            if x == 0 || x == max_x || y == max_y {
+            if y == max_y && floor {
+                board[y][x] = '#'
+            } else if x == 0 || x == max_x || y == max_y {
                 board[y][x] = '~'
             } else {
                 board[y][x] = '.'
@@ -98,7 +106,7 @@ func NewCave(lines []Line) Cave {
         }
     }
 
-    return Cave{board, Pos{500, 0}, 0}
+    return Cave{board, Pos{500, 0}, floor, 0}
 }
 
 func (c Cave) Print() {
@@ -111,15 +119,10 @@ func (c Cave) Print() {
 }
 
 func (c Cave) IsFree(p Pos) bool {
-    return c.board[p.y][p.x] == '.' || c.board[p.y][p.x] == '~'
-}
-
-func (c Cave) Oob(p Pos) bool {
-    if p.x < 0 || p.x >= len(c.board[0]) {
-        return true
-    }
-
-    return p.y >= len(c.board)
+    return p.x < 0 ||
+        p.x >= len(c.board[0]) ||
+        c.board[p.y][p.x] == '.' ||
+        c.board[p.y][p.x] == '~'
 }
 
 func (c Cave) NextPos(p Pos) Pos {
@@ -150,25 +153,50 @@ func (c Cave) Get(p Pos) rune {
     return c.board[p.y][p.x]
 }
 
+func (c *Cave) AddColumn(x int) {
+    for y := range c.board {
+        if x == 0 {
+            if y == len(c.board) - 1 {
+                c.board[y] = append([]rune{'#'}, c.board[y]...)
+            } else {
+                c.board[y] = append([]rune{'~'}, c.board[y]...)
+                c.board[y][1] = '.'
+            }
+        } else {
+            if y == len(c.board) - 1 {
+                c.board[y] = append(c.board[y], '#')
+            } else {
+                c.board[y] = append(c.board[y], '~')
+                c.board[y][x] = '.'
+            }
+        }
+    }
+}
+
 func (c *Cave) Add() bool {
     prev_pos := c.start
     for {
         current_pos := c.NextPos(prev_pos)
         if c.Get(current_pos) == '~' {
-            // fell off the edge
-            return false
+            if !c.floor {
+                // fell off the edge
+                return false
+            } else {
+                // add a new column
+                c.AddColumn(current_pos.x)
+            }
         }
         if current_pos == prev_pos {
             // settled
             c.n_grains++
             c.Set(current_pos, 'o')
-            return true
+            return current_pos != c.start
         }
         prev_pos = current_pos
     }
 }
 
-func parse_input(filename string) Cave {
+func parse_input(filename string, floor bool) Cave {
     contents, _ := os.ReadFile(filename)
 
     lines := []Line{}
@@ -184,7 +212,7 @@ func parse_input(filename string) Cave {
         lines = append(lines, Line{points})
     }
 
-    return NewCave(lines)
+    return NewCave(lines, floor)
 }
 
 func main() {
@@ -194,13 +222,28 @@ func main() {
 
     input := flag.Arg(0)
 
-    cave := parse_input(input)
+    switch part {
+    case 1:
+        cave := parse_input(input, false)
 
-    for {
-        if !cave.Add() {
-            break
+        for {
+            if !cave.Add() {
+                break
+            }
         }
-    }
 
-    fmt.Println(cave.n_grains)
+        fmt.Println(cave.n_grains)
+    case 2:
+        cave := parse_input(input, true)
+
+        for {
+            if !cave.Add() {
+                break
+            }
+        }
+
+        fmt.Println(cave.n_grains)
+    default:
+        log.Printf("error: part %d not implemented", part)
+    }
 }
