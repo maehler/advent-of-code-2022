@@ -37,6 +37,10 @@ func (s Sensor) Radius() int {
     return s.pos.Manhattan(s.closest_beacon.pos)
 }
 
+func (s Sensor) InRange(p Pos) bool {
+    return s.pos.Manhattan(p) <= s.Radius()
+}
+
 type Beacon struct {
     pos Pos
 }
@@ -90,19 +94,19 @@ func main() {
 
     sensors, beacons := parse_input(input)
 
+    min_x := 0
+    max_x := 0
+    for _, s := range sensors {
+        if s.pos.x + s.Radius() > max_x {
+            max_x = s.pos.x + s.Radius()
+        }
+        if s.pos.x - s.Radius() < min_x {
+            min_x = s.pos.x - s.Radius()
+        }
+    }
+
     switch part {
     case 1:
-        min_x := 0
-        max_x := 0
-        for _, s := range sensors {
-            if s.pos.x + s.Radius() > max_x {
-                max_x = s.pos.x + s.Radius()
-            }
-            if s.pos.x - s.Radius() < min_x {
-                min_x = s.pos.x - s.Radius()
-            }
-        }
-
         n_spots := 0
         for i := min_x; i <= max_x; i++ { 
             p := Pos{i, 2_000_000}
@@ -121,7 +125,63 @@ func main() {
         fmt.Println(n_spots)
 
     case 2:
-        ;
+        for _, s := range sensors {
+            radius := s.Radius() + 1
+            
+            var (
+                ur = Pos{1, -1}
+                dr = Pos{1, 1}
+                dl = Pos{-1, 1}
+                ul = Pos{-1, -1}
+            )
+
+            var (
+                left = Pos{s.pos.x - radius, s.pos.y}
+                top = Pos{s.pos.x, s.pos.y - radius}
+                right = Pos{s.pos.x + radius, s.pos.y}
+                bottom = Pos{s.pos.x, s.pos.y + radius}
+            )
+
+            limit := 4_000_000
+
+            edge_points := []Pos{left, top, right, bottom}
+            directions := []Pos{ur, dr, dl, ul}
+
+            current_pos := left
+            for i := range edge_points {
+                var end_pos Pos
+                if i == 3 {
+                    end_pos = edge_points[0]
+                } else {
+                    end_pos = edge_points[i + 1]
+                }
+
+                for current_pos != end_pos {
+                    if current_pos.x < 0 || current_pos.x > limit ||
+                            current_pos.y < 0 || current_pos.y > limit {
+                        current_pos.x += directions[i].x
+                        current_pos.y += directions[i].y
+                        continue
+                    }
+
+                    any_in_range := false
+                    for _, s := range sensors {
+                        if s.InRange(current_pos) {
+                            any_in_range = true
+                            break
+                        }
+                    }
+
+                    if !any_in_range {
+                        fmt.Println(4_000_000 * current_pos.x + current_pos.y)
+                        os.Exit(0)
+                    }
+                    
+                    current_pos.x += directions[i].x
+                    current_pos.y += directions[i].y
+                }
+            }
+        }
     default:
         log.Printf("error: part %d not implemented\n", part)
         os.Exit(1)
